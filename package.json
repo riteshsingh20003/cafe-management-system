@@ -1,0 +1,35 @@
+{
+  "name": "cafe-management-system",
+  "version": "1.0.0",
+  "description": "Full-Stack Cafe Menu & Order Management System",
+  "private": true,
+  "scripts": {
+    "install:all": "node scripts/install-all.js",
+    "install:all:win": "npm.cmd install --prefix backend && npm.cmd install --prefix frontend",
+    "install:all:nix": "npm install --prefix backend && npm install --prefix frontend",
+    "dev": "node scripts/dev.js",
+    "dev:backend": "node scripts/run-cmd.js backend dev",
+    "dev:frontend": "node scripts/run-cmd.js frontend dev",
+    "build:all": "node scripts/run-cmd.js frontend build",
+    "build:frontend": "node scripts/run-cmd.js frontend build",
+    "build:backend": "node -e \"console.log('Backend does not require a build step')\"",
+    "seed": "node scripts/run-cmd.js backend seed",
+    "docker:up": "docker compose up --build",
+    "docker:up:d": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  },
+  "keywords": [
+    "cafe",
+    "menu",
+    "orders",
+    "react",
+    "express",
+    "mongodb",
+    "docker",
+    "render",
+    "vercel"
+  ],
+  "author": "",
+  "license": "MIT"
+}

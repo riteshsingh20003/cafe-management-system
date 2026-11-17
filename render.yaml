@@ -1,0 +1,63 @@
+# ========================================================
+# Render Infrastructure as Code (Blueprint) Specification
+# Cafe Menu & Order Management System API
+# ========================================================
+services:
+  - type: web
+    name: cafe-management-api
+    env: node
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+        # Set to your MongoDB Atlas connection URI:
+        # mongodb+srv://<username>:<password>@cluster0.mongodb.net/cafe_management?retryWrites=true&w=majority
+      - key: CLIENT_URL
+        sync: false
+        # Set to your production frontend URL:
+        # https://your-cafe-app.vercel.app
+      - key: RENDER_EXTERNAL_URL
+        sync: false
+        # Set to your public Render service URL:
+        # https://cafe-management-api.onrender.com
+
+# ========================================================
+# FREE TIER SPIN-DOWN PREVENTION / KEEP-ALIVE STRATEGIES
+# ========================================================
+# Render free-tier instances spin down after 15 minutes of inactivity.
+# When a new request arrives, a 50-70 second cold start delay occurs.
+#
+# Choose ONE of the following solutions to keep the backend warm:
+#
+# 1. Built-in Backend Self-Pinger:
+#    The Express backend has an integrated node-cron task that pings
+#    /api/health every 14 minutes when RENDER_EXTERNAL_URL is defined.
+#    Set RENDER_EXTERNAL_URL=https://cafe-management-api.onrender.com
+#    in your Render dashboard environment variables.
+#
+# 2. External Health Monitor (Free & Recommended):
+#    Use a free monitoring service to ping the health check endpoint every 10-14 mins:
+#    - cron-job.org (Free HTTP GET every 10 minutes to https://cafe-management-api.onrender.com/api/health)
+#    - UptimeRobot (Free HTTP(s) monitor every 5 minutes)
+#    - BetterStack (Free 3-minute heartbeat check)
+#
+# 3. Render Cron Service (Render Starter/Team plans):
+#    services:
+#      - type: cron
+#        name: cafe-api-keepalive
+#        runtime: image
+#        image:
+#          url: curlimages/curl:latest
+#        schedule: "*/14 * * * *"
+#        command: "curl -fsS https://cafe-management-api.onrender.com/api/health"

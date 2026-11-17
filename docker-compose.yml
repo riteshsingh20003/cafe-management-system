@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # ----------------------------------------------------
+  # Database: MongoDB 7.0
+  # ----------------------------------------------------
+  mongo:
+    image: mongo:7.0
+    container_name: cafe-mongo
+    restart: unless-stopped
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_INITDB_DATABASE:-cafe_db}
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - cafe-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ----------------------------------------------------
+  # Backend API: Node.js + Express
+  # ----------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cafe-backend
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      PORT: 5000
+      NODE_ENV: ${NODE_ENV:-production}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongo:27017/cafe_db}
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000,http://localhost:5173}
+      RENDER_EXTERNAL_URL: ${RENDER_EXTERNAL_URL:-}
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - cafe-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ----------------------------------------------------
+  # Frontend Client: Vite React + Nginx
+  # ----------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+    container_name: cafe-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - cafe-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:80/ || exit 1"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# ----------------------------------------------------
+# Networks & Volumes
+# ----------------------------------------------------
+networks:
+  cafe-network:
+    name: cafe-network
+    driver: bridge
+
+volumes:
+  mongo_data:
+    name: cafe-mongo-data
